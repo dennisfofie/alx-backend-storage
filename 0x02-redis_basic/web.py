@@ -3,36 +3,29 @@
 
 import requests
 from redis import Redis
-from typing import Callable
 import time
 from functools import wraps
 
 
-def text_decorator(expiration):
+def text_decorator(method):
     """caching result through api calls"""
 
-    def decorator(method: Callable) -> Callable:
-        """first decorator"""
+    @wraps(method)
+    def wrapper(*args, **kwargs):
+        key = method.__qualname__ + "args"
+        count = method.__qualname__ + "args"
+        Redis().incr(key)
+        result = Redis().get(count)
+        if result:
+            return str(result)
 
-        @wraps(method)
-        def wrapper(*args, **kwargs):
-            """the wrapper function"""
-            key = method.__qualname__ + "args"
-            count = method.__qualname__ + "args"
-            Redis().incr(key)
-            result = Redis().get(count)
-            if result:
-                return str(result)
-            results = method(*args, **kwargs)
-            Redis().setex(key, expiration, results)
-            return results
+        time.sleep(10)
+        return method(*args, **kwargs)
 
-        return wrapper
-
-    return decorator
+    return wrapper
 
 
-@text_decorator(expiration=10)
+@text_decorator
 def get_page(url: str) -> str:
     "get information about a page"
     data = requests.get(url)

@@ -11,7 +11,10 @@ def replay(method):
     input_ = method.__qualname__ + ":inputs"
     output_ = method.__qualname__ + ":outputs"
 
-    input_o = redis.Redis.lrange(input_, 0, -1)
+    input_o = redis.Redis.lrange(
+        input_,
+        0,
+    )
     output_o = redis.Redis.lrange(output_, 0, -1)
 
     print(f"{method.__qualname__} was called {len(input_)} times:")
@@ -66,7 +69,7 @@ class Cache:
         self._redis.set(key, data)
         return key
 
-    def get(self, key: str, fn: Optional[Callable[[bytes], any]] = None) -> any:
+    def get(self, key: str, fn: Optional[Callable] = None) -> any:
         """Changing the format of the data type"""
         value = self._redis.get(key)
         if value is None:
